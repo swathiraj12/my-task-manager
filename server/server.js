@@ -1,0 +1,26 @@
+// server/server.js
+import mongoose from 'mongoose';
+import express from 'express'
+import cors from 'cors'
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: './config.env' });
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Import and use the task routes
+import taskRoutes from './routes/taskRoutes.js';
+
+app.use('/api/tasks', taskRoutes);
+
+// Connect to MongoDB
+const MONGO_URI = process.env.MONGO_URI;
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('MongoDB Connected successfully!'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
