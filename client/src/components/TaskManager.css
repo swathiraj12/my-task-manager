@@ -70,6 +70,22 @@ form {
     background-color: var(--secondary-color);
 }
 
+.controls-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    flex-grow: 1;
+}
+
+.sort-select {
+    flex-grow: 0;
+    min-width: 180px;
+}
+
 
 /*      Responsive Styles (Mobile)     */
 @media (max-width: 600px) {
@@ -94,5 +110,9 @@ form {
 
     .app-container {
         padding: 20px;
+    }
+
+    .controls-container {
+        flex-direction: column;
     }
 }

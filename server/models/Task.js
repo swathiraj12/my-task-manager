@@ -1,6 +1,11 @@
 import mongoose from 'mongoose'
 
 const taskSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User', // This tells Mongoose the field refers to the User model
+  },
   title: {
     type: String,
     required: [true, 'Please provide a title for the task'],
@@ -16,8 +21,8 @@ const taskSchema = new mongoose.Schema({
     default: 'To Do',
   },
   assignedTo: {
-    type: String, // For now, we'll just use a name. We can link to a User model later.
-    trim: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // This creates a reference to a User document
   },
   dueDate: {
     type: Date,

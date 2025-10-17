@@ -1,5 +1,5 @@
 // client/src/components/TaskManager.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 // Files import
 import './TaskManager.css';
@@ -9,6 +9,34 @@ function TaskManager() {
     const [tasks, setTasks] = useState([]);
     const [title, setTitle] = useState('');
     const [assignedTo, setAssignedTo] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('newest');
+
+    const displayedTasks = useMemo(() => {
+        return tasks
+            .filter(task => {
+                // Search logic: check against title and assignedTo
+                const term = searchTerm.toLowerCase();
+                const taskTitle = task.title.toLowerCase();
+                const taskAssignee = (task.assignedTo || '').toLowerCase();
+                return taskTitle.includes(term) || taskAssignee.includes(term);
+            })
+            .sort((a, b) => {
+                // Sort logic
+                switch (sortOrder) {
+                    case 'title-asc':
+                        return a.title.localeCompare(b.title);
+                    case 'title-desc':
+                        return b.title.localeCompare(a.title);
+                    case 'oldest':
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    case 'newest':
+                    default:
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                }
+            });
+    }, [tasks, searchTerm, sortOrder]);
 
     // useEffect hook to fetch tasks when the component mounts
     useEffect(() => {
@@ -83,8 +111,31 @@ function TaskManager() {
                 <button type="submit" className="btn btn-primary">Add Task</button>
             </form>
 
+            <hr />
+
+            {/* NEW: Controls for Search and Sort */}
+            <div className="controls-container">
+                <input
+                    type="text"
+                    placeholder="Search tasks..."
+                    className="input-field search-input"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <select
+                    className="input-field sort-select"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                >
+                    <option value="newest">Sort by Newest</option>
+                    <option value="oldest">Sort by Oldest</option>
+                    <option value="title-asc">Sort by Title (A-Z)</option>
+                    <option value="title-desc">Sort by Title (Z-A)</option>
+                </select>
+            </div>
+
             <ul className="task-list">
-                {tasks.map(task => (
+                {displayedTasks.map(task => (
                     <li key={task._id} className="task-item">
 
                         {/* NEW: A container for the task title and assignee */}

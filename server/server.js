@@ -13,8 +13,12 @@ app.use(express.json());
 
 // Import and use the task routes
 import taskRoutes from './routes/taskRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 app.use('/api/tasks', taskRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Connect to MongoDB
 const MONGO_URI = process.env.MONGO_URI;

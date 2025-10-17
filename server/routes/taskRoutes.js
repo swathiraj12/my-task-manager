@@ -6,15 +6,16 @@ import {
   updateTask,
   deleteTask,
 } from '../controllers/taskController.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.route('/')
-  .get(getAllTasks)
-  .post(createTask);
+  .get(protect, getAllTasks)
+  .post(protect, authorize('manager'), createTask);
 
 router.route('/:id')
-  .put(updateTask)
-  .delete(deleteTask);
+  .put(protect, updateTask)
+  .delete(protect, authorize('manager'), deleteTask);
 
 export default router;
