@@ -1,7 +1,7 @@
 // client/src/services/taskService.js
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api/tasks';
+const API_BASE_URL = 'https://my-task-manager-api-smiy.onrender.com/api/tasks';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
