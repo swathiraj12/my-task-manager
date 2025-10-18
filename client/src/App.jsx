@@ -1,30 +1,44 @@
 // client/src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
+import TasksPage from './pages/TasksPage.jsx';
+import MainLayout from './layouts/MainLayout.jsx';
+import TaskDetailsPage from './pages/TaskDetailsPage.jsx';
 
-// This is our Protected Route component
-const PrivateRoute = ({ children }) => {
-  const user = localStorage.getItem('user');
-  return user ? children : <Navigate to="/login" />;
+// --- PROTECTED ROUTE COMPONENTS ---
+const AuthRoute = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? <MainLayout /> : <Navigate to="/login" />;
 };
+
+const ManagerRoute = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.role === 'manager' ? <Outlet /> : <Navigate to="/tasks" />;
+};
+
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <DashboardPage />
-            </PrivateRoute>
-          }
-        />
+
+        {/* Main Application Routes (Protected) */}
+        <Route element={<AuthRoute />}>
+            {/* Manager-only routes */}
+            <Route element={<ManagerRoute />}>
+                <Route path="/" element={<DashboardPage />} />
+            </Route>
+            {/* Routes for everyone */}
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/task/:taskId" element={<TaskDetailsPage />} />
+        </Route>
+
       </Routes>
     </Router>
   );

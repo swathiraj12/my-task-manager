@@ -1,164 +1,209 @@
 // client/src/components/TaskManager.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { CSVLink } from 'react-csv';
 
 // Files import
 import './TaskManager.css';
 import { getAllTasks, createTask, updateTask, deleteTask } from '../services/taskService';
+import { getEmployees } from '../services/userService';
+
+// A small helper component for displaying priority with colors
+const PriorityTag = ({ priority }) => {
+    const priorityClass = `priority-${priority?.toLowerCase()}`;
+    return <span className={`priority-tag ${priorityClass}`}>{priority}</span>;
+};
 
 function TaskManager() {
+    // --- STATE MANAGEMENT ---
     const [tasks, setTasks] = useState([]);
-    const [title, setTitle] = useState('');
-    const [assignedTo, setAssignedTo] = useState('');
+    const [employees, setEmployees] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortOrder, setSortOrder] = useState('newest');
+    const [newTask, setNewTask] = useState({
+        title: '',
+        assignedTo: '',
+        priority: 'Medium',
+        dueDate: ''
+    });
 
-    const displayedTasks = useMemo(() => {
-        return tasks
-            .filter(task => {
-                // Search logic: check against title and assignedTo
-                const term = searchTerm.toLowerCase();
-                const taskTitle = task.title.toLowerCase();
-                const taskAssignee = (task.assignedTo || '').toLowerCase();
-                return taskTitle.includes(term) || taskAssignee.includes(term);
-            })
-            .sort((a, b) => {
-                // Sort logic
-                switch (sortOrder) {
-                    case 'title-asc':
-                        return a.title.localeCompare(b.title);
-                    case 'title-desc':
-                        return b.title.localeCompare(a.title);
-                    case 'oldest':
-                        return new Date(a.createdAt) - new Date(b.createdAt);
-                    case 'newest':
-                    default:
-                        return new Date(b.createdAt) - new Date(a.createdAt);
-                }
-            });
-    }, [tasks, searchTerm, sortOrder]);
+    const user = JSON.parse(localStorage.getItem('user'));
 
-    // useEffect hook to fetch tasks when the component mounts
+    // --- DATA FETCHING ---
     useEffect(() => {
-        const fetchTasks = async () => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            setError(null);
             try {
                 const fetchedTasks = await getAllTasks();
                 setTasks(fetchedTasks);
-            } catch (error) {
-                console.error('There was an error fetching the tasks!', error);
+
+                if (user?.role === 'manager') {
+                    const fetchedEmployees = await getEmployees();
+                    setEmployees(fetchedEmployees);
+                }
+            } catch (err) {
+                setError("Failed to fetch data. Please try refreshing the page.");
+                console.error("Failed to fetch data", err);
+            } finally {
+                setIsLoading(false);
             }
         };
-        fetchTasks();
-    }, []);
+
+        fetchData();
+    }, [user?.role]);
+
+    // --- EVENT HANDLERS ---
+    const handleFormChange = (e) => {
+        setNewTask({ ...newTask, [e.target.name]: e.target.value });
+    };
 
     const handleAddTask = async (e) => {
         e.preventDefault();
-        if (!title) return;
+        if (!newTask.title || !newTask.assignedTo) {
+            alert("Please provide a title and assign the task.");
+            return;
+        }
 
+        setIsSubmitting(true);
+        setError(null);
         try {
-            const newTaskData = { title, assignedTo, status: 'To Do' };
-            const newTask = await createTask(newTaskData);
-            setTasks([...tasks, newTask]);
-            setTitle('');
-            setAssignedTo('');
-        } catch (error) {
-            console.error('Error adding task!', error);
+            await createTask(newTask);
+            // Refetch all tasks to get the latest, fully populated list
+            const updatedTasks = await getAllTasks();
+            setTasks(updatedTasks);
+            setNewTask({ title: '', assignedTo: '', priority: 'Medium', dueDate: '' }); // Reset form
+        } catch (err) {
+            setError("Failed to add task. Please check the details and try again.");
+            console.error("Error adding task!", err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const handleDeleteTask = async (id) => {
+    const handleDeleteTask = async (taskId) => {
+        if (!window.confirm("Are you sure you want to delete this task?")) return;
         try {
-            await deleteTask(id);
-            setTasks(tasks.filter(task => task._id !== id));
-        } catch (error) {
-            console.error('Error deleting task!', error);
+            await deleteTask(taskId);
+            setTasks(currentTasks => currentTasks.filter(task => task._id !== taskId));
+        } catch (err) {
+            setError("Failed to delete task.");
+            console.error("Failed to delete task", err);
         }
     };
 
     const handleStatusChange = async (task) => {
         const statusOptions = ['To Do', 'In Progress', 'Done'];
         const currentStatusIndex = statusOptions.indexOf(task.status);
-        // Cycle to the next status, or back to the first if at the end
         const nextStatus = statusOptions[(currentStatusIndex + 1) % statusOptions.length];
-
         try {
             const updatedTask = await updateTask(task._id, { status: nextStatus });
-            // Update the task in our local state
-            setTasks(tasks.map(t => (t._id === task._id ? updatedTask : t)));
-        } catch (error) {
-            // Handle error (e.g., show a notification)
-            console.error("Failed to update task status", error);
+            setTasks(tasks.map(t => (t._id === task._id ? { ...t, status: updatedTask.status } : t)));
+        } catch (err) {
+            setError("Failed to update task status.");
+            console.error("Failed to update task status", err);
         }
     };
 
+    // --- RENDER LOGIC ---
+    if (isLoading) return <div>Loading tasks...</div>;
+
+    // Prepare data for CSV export
+    const csvData = tasks.map(t => ({
+        Title: t.title,
+        AssignedTo: t.assignedTo?.name,
+        AssignedBy: t.user?.name,
+        Status: t.status,
+        Priority: t.priority,
+        DueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'N/A',
+        CreatedAt: new Date(t.createdAt).toLocaleString(),
+    }));
+
     return (
         <div>
-            <form onSubmit={handleAddTask}>
-                <input
-                    type="text"
-                    placeholder="Task Title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="input-field"
-                />
-                <input
-                    type="text"
-                    placeholder="Assigned To"
-                    value={assignedTo}
-                    onChange={(e) => setAssignedTo(e.target.value)}
-                    className="input-field"
-                />
-                <button type="submit" className="btn btn-primary">Add Task</button>
-            </form>
+            {/* Display a general error message at the top */}
+            {error && <div className="error-banner">{error}</div>}
+
+            {/* Manager's View: "Add Task" Form */}
+            {user?.role === 'manager' && (
+                <form onSubmit={handleAddTask} className="add-task-form">
+                    <h3>Assign New Task</h3>
+                    <div className="form-grid">
+                        <input
+                            type="text" name="title" placeholder="Task Title"
+                            value={newTask.title} onChange={handleFormChange}
+                            className="input-field" required
+                        />
+                        <select
+                            name="assignedTo" value={newTask.assignedTo}
+                            onChange={handleFormChange} className="input-field" required
+                        >
+                            <option value="">-- Assign to Employee --</option>
+                            {employees.map(emp => (
+                                <option key={emp._id} value={emp._id}>{emp.name}</option>
+                            ))}
+                        </select>
+                        <select
+                            name="priority" value={newTask.priority}
+                            onChange={handleFormChange} className="input-field"
+                        >
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                        <input
+                            type="date" name="dueDate"
+                            value={newTask.dueDate} onChange={handleFormChange}
+                            className="input-field"
+                        />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                        {isSubmitting ? 'Assigning...' : 'Assign Task'}
+                    </button>
+                </form>
+            )}
 
             <hr />
 
-            {/* NEW: Controls for Search and Sort */}
-            <div className="controls-container">
-                <input
-                    type="text"
-                    placeholder="Search tasks..."
-                    className="input-field search-input"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <select
-                    className="input-field sort-select"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
-                >
-                    <option value="newest">Sort by Newest</option>
-                    <option value="oldest">Sort by Oldest</option>
-                    <option value="title-asc">Sort by Title (A-Z)</option>
-                    <option value="title-desc">Sort by Title (Z-A)</option>
-                </select>
+            {/* Header for the task list with Export button */}
+            <div className="task-list-header">
+                <h3>{user?.role === 'manager' ? 'Tasks You Assigned' : 'Your Assigned Tasks'}</h3>
+                {user?.role === 'manager' && tasks.length > 0 && (
+                    <CSVLink data={csvData} filename={"task-report.csv"} className="btn btn-secondary">
+                        Export to CSV
+                    </CSVLink>
+                )}
             </div>
 
+            {/* Task List */}
             <ul className="task-list">
-                {displayedTasks.map(task => (
+                {tasks.length > 0 ? tasks.map(task => (
                     <li key={task._id} className="task-item">
-
-                        {/* NEW: A container for the task title and assignee */}
-                        <div className="task-info">
-                            <strong>{task.title}</strong>
-                            <small>Assigned to: {task.assignedTo || 'N/A'}</small>
+                        <Link to={`/task/${task._id}`} className="task-info-link">
+                            <div className="task-info">
+                                <strong>{task.title}</strong>
+                                <small>
+                                    {user?.role === 'manager' ? `To: ${task.assignedTo?.name || 'N/A'}` : `From: ${task.user?.name || 'N/A'}`}
+                                </small>
+                                <small className="task-meta">
+                                    Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
+                                </small>
+                            </div>
+                        </Link>
+                        <div className="task-tags">
+                            <PriorityTag priority={task.priority} />
                         </div>
-
-                        {/* NEW: A container for the action buttons */}
                         <div className="task-actions">
-                            <span
-                                className={`task-status status-${task.status.toLowerCase().replace(' ', '-')}`}
-                                onClick={() => handleStatusChange(task)}
-                            >
+                            <span className={`task-status status-${task.status.toLowerCase().replace(' ', '-')}`} onClick={() => handleStatusChange(task)}>
                                 {task.status}
                             </span>
-                            <button onClick={() => handleDeleteTask(task._id)} className="btn btn-danger">
-                                Delete
-                            </button>
+                            {user?.role === 'manager' && (
+                                <button onClick={() => handleDeleteTask(task._id)} className="btn btn-danger">Delete</button>
+                            )}
                         </div>
-
                     </li>
-                ))}
+                )) : <p>No tasks found.</p>}
             </ul>
         </div>
     );

@@ -1,8 +1,8 @@
 // client/src/services/authService.js
 import axios from 'axios';
 
-// const API_BASE_URL = 'https://my-task-manager-api-smiy.onrender.com/api/auth';
-const API_BASE_URL = 'http://localhost:5000/api/auth';
+const API_BASE_URL = 'https://my-task-manager-api-smiy.onrender.com/api/auth';
+// const API_BASE_URL = 'http://localhost:5000/api/auth';
 
 // Register user
 export const register = async (userData) => {

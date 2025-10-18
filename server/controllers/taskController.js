@@ -19,6 +19,31 @@ export const getAllTasks = async (req, res) => {
   }
 };
 
+// @desc    Get a single task by its ID
+// @route   GET /api/tasks/:id
+export const getTaskById = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+
+    // Security Check: Make sure the user is either the manager who created it
+    // or the employee it is assigned to.
+    const isManager = req.user.role === 'manager' && task.user.toString() === req.user.id;
+    const isAssignedEmployee = req.user.role === 'employee' && task.assignedTo.toString() === req.user.id;
+
+    if (!isManager && !isAssignedEmployee) {
+         return res.status(401).json({ success: false, error: 'User not authorized to view this task' });
+    }
+
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
 // @desc    Create a new task
 // @route   POST /api/tasks
 export const createTask = async (req, res) => {

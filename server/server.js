@@ -15,10 +15,14 @@ app.use(express.json());
 import taskRoutes from './routes/taskRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+import workUpdateRoutes from './routes/workUpdateRoutes.js';
 
 app.use('/api/tasks', taskRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/updates', workUpdateRoutes);
 
 // Connect to MongoDB
 const MONGO_URI = process.env.MONGO_URI;
