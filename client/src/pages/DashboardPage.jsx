@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pie, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 // Files import
 import { getSummary } from '../services/analyticsService.js';
@@ -29,18 +29,6 @@ function DashboardPage() {
 
   if (loading) return <div>Loading dashboard...</div>;
   if (!summary) return <div>Could not load dashboard data.</div>;
-
-  const handleBarClick = (event, elements) => {
-    if (elements.length === 0) return;
-    const elementIndex = elements[0].index;
-    const employee = summary.tasksPerEmployee[elementIndex];
-    // We need the employee's ID. Let's assume we added it to the API response.
-    // We need to go back and add the ID to the API response!
-    // For now, let's prepare the frontend.
-    if (employee.employeeId) {
-      navigate(`/employee/${employee.employeeId}`);
-    }
-  };
 
   // --- Chart Data Configuration ---
   const pieChartData = {
