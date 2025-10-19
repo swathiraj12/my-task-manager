@@ -18,12 +18,19 @@ export const getAnalyticsSummary = async (req, res) => {
 
     // 2. Tasks Per Employee (Bar Chart)
     const tasksPerEmployee = await Task.aggregate([
-      { $match: { user: managerId } },
-      { $group: { _id: '$assignedTo', totalTasks: { $sum: 1 } } },
-      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'employee' } },
-      { $unwind: '$employee' },
-      { $project: { _id: 0, employeeName: '$employee.name', totalTasks: 1 } }
-    ]);
+    { $match: { user: managerId, assignedTo: { $exists: true, $ne: null } } },
+    { $group: { _id: '$assignedTo', totalTasks: { $sum: 1 } } },
+    { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'employee' } },
+    { $unwind: '$employee' },
+    {
+        $project: {
+            _id: 0,
+            employeeId: '$employee._id', // This is correct
+            employeeName: '$employee.name',
+            totalTasks: 1
+        }
+    }
+]);
 
     // 3. Overall Progress (Percentage)
     const totalTasks = await Task.countDocuments({ user: managerId });
@@ -56,7 +63,7 @@ export const getTaskProgressHistory = async (req, res) => {
 
     // Security Check: Ensure the user is authorized to view this task
     if (task.user.toString() !== req.user.id && task.assignedTo.toString() !== req.user.id) {
-        return res.status(401).json({ success: false, error: 'Not authorized' });
+      return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
     const progressUpdates = await WorkUpdate.find({ task: taskId })
@@ -90,7 +97,7 @@ export const getEmployeeSummary = async (req, res) => {
       { $match: { user: managerId, assignedTo: employeeObjectId } },
       { $group: { _id: '$priority', count: { $sum: 1 } } }
     ]);
-    
+
     const totalTasks = await Task.countDocuments({ user: managerId, assignedTo: employeeObjectId });
     const doneTasks = await Task.countDocuments({ user: managerId, assignedTo: employeeObjectId, status: 'Done' });
     const completionPercentage = totalTasks > 0 ? (doneTasks / totalTasks) * 100 : 0;

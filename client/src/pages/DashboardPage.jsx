@@ -1,8 +1,10 @@
-// client/src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
-import { getSummary } from '../services/analyticsService.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Link, useNavigate } from 'react-router-dom';
+
+// Files import
+import { getSummary } from '../services/analyticsService.js';
 
 // Register the components you're using from Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -27,6 +29,18 @@ function DashboardPage() {
 
   if (loading) return <div>Loading dashboard...</div>;
   if (!summary) return <div>Could not load dashboard data.</div>;
+
+  const handleBarClick = (event, elements) => {
+    if (elements.length === 0) return;
+    const elementIndex = elements[0].index;
+    const employee = summary.tasksPerEmployee[elementIndex];
+    // We need the employee's ID. Let's assume we added it to the API response.
+    // We need to go back and add the ID to the API response!
+    // For now, let's prepare the frontend.
+    if (employee.employeeId) {
+      navigate(`/employee/${employee.employeeId}`);
+    }
+  };
 
   // --- Chart Data Configuration ---
   const pieChartData = {
@@ -61,29 +75,42 @@ function DashboardPage() {
 
   return (
     <div className="dashboard-grid">
-        {/* Key Metrics */}
-        <div className="metric-card">
-            <h3>Total Tasks</h3>
-            <p>{summary.totalTasks}</p>
-        </div>
-        <div className="metric-card">
-            <h3>Tasks Completed</h3>
-            <p>{summary.doneTasks}</p>
-        </div>
-        <div className="metric-card">
-            <h3>Overall Progress</h3>
-            <p>{summary.completionPercentage}%</p>
-        </div>
+      {/* Key Metrics */}
+      <div className="metric-card">
+        <h3>Total Tasks</h3>
+        <p>{summary.totalTasks}</p>
+      </div>
+      <div className="metric-card">
+        <h3>Tasks Completed</h3>
+        <p>{summary.doneTasks}</p>
+      </div>
+      <div className="metric-card">
+        <h3>Overall Progress</h3>
+        <p>{summary.completionPercentage}%</p>
+      </div>
 
-        {/* Charts */}
-        <div className="chart-card chart-pie">
-            <h3>Task Status Overview</h3>
-            <Pie data={pieChartData} />
+      {/* Charts */}
+      <div className="chart-card chart-pie">
+        <h3>Task Status Overview</h3>
+        <Pie data={pieChartData} />
+      </div>
+      <div className="chart-card chart-bar">
+        <h3>Tasks per Employee</h3>
+        <Bar data={barChartData} options={{ indexAxis: 'y' }} />
+      </div>
+
+      {summary && summary.tasksPerEmployee.length > 0 && (
+        <div className="card">
+          <h3>Team Members</h3>
+          <div className="employee-list">
+            {summary.tasksPerEmployee.map(emp => (
+              <Link key={emp.employeeId} to={`/employee/${emp.employeeId}`} className="employee-link">
+                {emp.employeeName} <span>({emp.totalTasks} tasks)</span>
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="chart-card chart-bar">
-            <h3>Tasks per Employee</h3>
-            <Bar data={barChartData} options={{ indexAxis: 'y' }} />
-        </div>
+      )}
     </div>
   );
 }

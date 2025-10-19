@@ -1,47 +1,45 @@
-// client/src/pages/TaskDetailsPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios'; // We'll use axios directly here for simplicity
-import './TaskDetailsPage.css';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement, Filler } from 'chart.js';
 
-// Helper function to create a configured axios instance
-const createApi = () => {
-    const api = axios.create();
-    api.interceptors.request.use((config) => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (user && user.token) {
-            config.headers.Authorization = `Bearer ${user.token}`;
-        }
-        return config;
-    });
-    return api;
-};
+// Files import
+import './TaskDetailsPage.css';
+import { getTaskById, getTaskUpdates, addWorkUpdate } from '../services/taskService.js';
+import { getTaskProgress } from '../services/analyticsService.js';
+import { addManagerRemark, acknowledgeRemark } from '../services/workUpdateService.js';
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement, Filler);
 
 function TaskDetailsPage() {
     const { taskId } = useParams();
     const [task, setTask] = useState(null);
     const [updates, setUpdates] = useState([]);
+    const [progressData, setProgressData] = useState([]);
+    const [remark, setRemark] = useState('');
+    const [newUpdate, setNewUpdate] = useState({ updateText: '', percentageComplete: 0, intensity: 'Medium' });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
     const user = JSON.parse(localStorage.getItem('user'));
 
-    // Form states
-    const [newUpdate, setNewUpdate] = useState({ updateText: '', percentageComplete: 0, intensity: 'Medium' });
-    const [remark, setRemark] = useState('');
-
     const fetchData = useCallback(async () => {
-        const api = createApi();
         try {
-            const taskRes = await api.get(`http://localhost:5000/api/tasks/${taskId}`);
-            const updatesRes = await api.get(`http://localhost:5000/api/tasks/${taskId}/updates`);
-            setTask(taskRes.data.data);
-            setUpdates(updatesRes.data.data);
-            // Set initial percentage from the latest update if available
-            if (updatesRes.data.data.length > 0) {
-                setNewUpdate(prev => ({ ...prev, percentageComplete: updatesRes.data.data[0].percentageComplete }));
+            const [taskData, updatesData, progressHistory] = await Promise.all([
+                getTaskById(taskId),
+                getTaskUpdates(taskId),
+                getTaskProgress(taskId)
+            ]);
+            setTask(taskData);
+            setUpdates(updatesData);
+            setProgressData(progressHistory);
+            if (updatesData.length > 0) {
+                setNewUpdate(prev => ({ ...prev, percentageComplete: updatesData[0].percentageComplete }));
             }
         } catch (err) {
-            setError('Failed to fetch task details.');
+            setError('Failed to fetch task details. Please try again.');
+            console.error('Failed to fetch task details.', err);
         } finally {
             setLoading(false);
         }
@@ -51,31 +49,48 @@ function TaskDetailsPage() {
         fetchData();
     }, [fetchData]);
 
-    // --- Event Handlers ---
+    // --- CLEAN EVENT HANDLERS ---
     const handleUpdateSubmit = async (e) => {
         e.preventDefault();
-        const api = createApi();
         try {
-            await api.post(`http://localhost:5000/api/tasks/${taskId}/updates`, newUpdate);
-            setNewUpdate({ updateText: '', percentageComplete: 0, intensity: 'Medium' }); // Reset form
+            await addWorkUpdate(taskId, newUpdate);
+            setNewUpdate({ updateText: '', percentageComplete: newUpdate.percentageComplete, intensity: 'Medium' });
             fetchData(); // Refetch all data to show the new update
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            setError("Failed to submit update.");
+        }
     };
 
     const handleRemarkSubmit = async (updateId, remarkText) => {
-        const api = createApi();
+        if (!remarkText) return;
         try {
-            await api.put(`http://localhost:5000/api/updates/${updateId}/remark`, { remark: remarkText });
+            await addManagerRemark(updateId, remarkText);
             fetchData();
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            setError("Failed to add remark.");
+        }
     };
 
     const handleAcknowledge = async (updateId) => {
-        const api = createApi();
         try {
-            await api.put(`http://localhost:5000/api/updates/${updateId}/acknowledge`);
+            await acknowledgeRemark(updateId);
             fetchData();
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            setError("Failed to acknowledge remark.");
+        }
+    };
+
+    // --- CHART DATA CONFIGURATION ---
+    const lineChartData = {
+        labels: progressData.map(p => new Date(p.createdAt).toLocaleDateString()),
+        datasets: [{
+            label: 'Task Completion %',
+            data: progressData.map(p => p.percentageComplete),
+            fill: true,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            tension: 0.1
+        }]
     };
 
     if (loading) return <div>Loading...</div>;
@@ -172,6 +187,13 @@ function TaskDetailsPage() {
                             <span>Due Date</span><strong>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'}</strong>
                         </div>
                     </div>
+
+                    {progressData.length > 0 && (
+                        <div className="card">
+                            <h3>Progress Over Time</h3>
+                            <Line data={lineChartData} />
+                        </div>
+                    )}
                 </aside>
             </div>
         </div>

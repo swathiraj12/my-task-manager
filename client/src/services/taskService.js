@@ -61,3 +61,36 @@ export const deleteTask = async (taskId) => {
     throw error;
   }
 };
+
+// Gets a single task by its ID
+export const getTaskById = async (taskId) => {
+  try {
+    const response = await api.get(`/${taskId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error fetching task ${taskId}:`, error);
+    throw error;
+  }
+};
+
+// Gets all work updates for a specific task
+export const getTaskUpdates = async (taskId) => {
+  try {
+    const response = await api.get(`/${taskId}/updates`);
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error fetching updates for task ${taskId}:`, error);
+    throw error;
+  }
+};
+
+// Adds a new work update to a specific task
+export const addWorkUpdate = async (taskId, updateData) => {
+  try {
+    const response = await api.post(`/${taskId}/updates`, updateData);
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error adding update to task ${taskId}:`, error);
+    throw error;
+  }
+};

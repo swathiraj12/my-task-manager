@@ -1,4 +1,3 @@
-// client/src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
@@ -7,6 +6,7 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import TasksPage from './pages/TasksPage.jsx';
 import MainLayout from './layouts/MainLayout.jsx';
 import TaskDetailsPage from './pages/TaskDetailsPage.jsx';
+import EmployeeDetailsPage from './pages/EmployeeDetailsPage.jsx';
 
 // --- PROTECTED ROUTE COMPONENTS ---
 const AuthRoute = () => {
@@ -33,6 +33,7 @@ function App() {
             {/* Manager-only routes */}
             <Route element={<ManagerRoute />}>
                 <Route path="/" element={<DashboardPage />} />
+                <Route path="/employee/:employeeId" element={<EmployeeDetailsPage />} />
             </Route>
             {/* Routes for everyone */}
             <Route path="/tasks" element={<TasksPage />} />

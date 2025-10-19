@@ -7,8 +7,14 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config({ path: './config.env' });
 
+const corsOptions = {
+  origin: 'https://my-task-manager-sable.vercel.app', // <-- The Production URL
+  optionsSuccessStatus: 200
+};
+
 const app = express();
 app.use(cors());
+// app.use(cors(corsOptions));
 app.use(express.json());
 
 // Import and use the task routes
