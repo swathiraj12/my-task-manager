@@ -7,8 +7,10 @@ import WorkUpdate from '../models/WorkUpdate.js';
 // @desc    Get analytics data for the manager's team
 // @route   GET /api/analytics/summary
 export const getAnalyticsSummary = async (req, res) => {
+  console.log("--- [getAnalyticsSummary] Received request ---");
   try {
     const managerId = new mongoose.Types.ObjectId(req.user.id);
+    console.log(`Manager ID: ${managerId}`);
 
     // 1. Overall Task Status (Pie Chart)
     const statusSummary = await Task.aggregate([
@@ -16,6 +18,7 @@ export const getAnalyticsSummary = async (req, res) => {
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
 
+    console.log("Starting tasksPerEmployee aggregation...");
     // 2. Tasks Per Employee (Bar Chart)
     const tasksPerEmployee = await Task.aggregate([
     { $match: { user: managerId, assignedTo: { $exists: true, $ne: null } } },
@@ -31,25 +34,26 @@ export const getAnalyticsSummary = async (req, res) => {
         }
     }
 ]);
+console.log("Aggregation Result for tasksPerEmployee:", JSON.stringify(tasksPerEmployee, null, 2));
 
     // 3. Overall Progress (Percentage)
     const totalTasks = await Task.countDocuments({ user: managerId });
     const doneTasks = await Task.countDocuments({ user: managerId, status: 'Done' });
     const completionPercentage = totalTasks > 0 ? (doneTasks / totalTasks) * 100 : 0;
 
-    res.status(200).json({
-      success: true,
-      data: {
-        statusSummary,       // For the pie chart
-        tasksPerEmployee,    // For the bar chart
-        completionPercentage: completionPercentage.toFixed(1), // Rounded percentage
+    const responseData = {
+        statusSummary,
+        tasksPerEmployee,
+        completionPercentage: completionPercentage.toFixed(1),
         totalTasks,
         doneTasks
-      }
-    });
+    };
+
+    console.log("--- [getAnalyticsSummary] Sending successful response ---");
+    res.status(200).json({ success: true, data: responseData });
 
   } catch (error) {
-    console.error(error);
+    console.error("--- [getAnalyticsSummary] CRASHED! ---", error);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };
@@ -81,10 +85,16 @@ export const getTaskProgressHistory = async (req, res) => {
 // @desc    Get an analytics summary for a single employee
 // @route   GET /api/analytics/employee/:employeeId
 export const getEmployeeSummary = async (req, res) => {
+  console.log("--- [getEmployeeSummary] Received request ---");
   try {
     const { employeeId } = req.params;
+    console.log(`Raw employeeId from params: ${employeeId}`);
+
     const managerId = new mongoose.Types.ObjectId(req.user.id);
+    console.log(`Manager ID: ${managerId}`);
+
     const employeeObjectId = new mongoose.Types.ObjectId(employeeId);
+    console.log(`Converted employeeObjectId: ${employeeObjectId}`);
 
     // This query is very similar to the main summary, but with an
     // extra $match stage to filter by the specific employee
@@ -102,6 +112,7 @@ export const getEmployeeSummary = async (req, res) => {
     const doneTasks = await Task.countDocuments({ user: managerId, assignedTo: employeeObjectId, status: 'Done' });
     const completionPercentage = totalTasks > 0 ? (doneTasks / totalTasks) * 100 : 0;
 
+    console.log("--- [getEmployeeSummary] Sending successful response ---");
     res.status(200).json({
       success: true,
       data: {
@@ -113,7 +124,7 @@ export const getEmployeeSummary = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error("--- [getEmployeeSummary] CRASHED! ---", error);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };
