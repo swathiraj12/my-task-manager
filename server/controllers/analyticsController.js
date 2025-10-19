@@ -21,20 +21,27 @@ export const getAnalyticsSummary = async (req, res) => {
     console.log("Starting tasksPerEmployee aggregation...");
     // 2. Tasks Per Employee (Bar Chart)
     const tasksPerEmployee = await Task.aggregate([
-    { $match: { user: managerId, assignedTo: { $exists: true, $ne: null } } },
-    { $group: { _id: '$assignedTo', totalTasks: { $sum: 1 } } },
-    { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'employee' } },
-    { $unwind: '$employee' },
-    {
-        $project: {
-            _id: 0,
-            employeeId: '$employee._id', // This is correct
-            employeeName: '$employee.name',
-            totalTasks: 1
+      { $match: { user: managerId, assignedTo: { $exists: true, $ne: null } } },
+      { $group: { _id: '$assignedTo', totalTasks: { $sum: 1 } } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'employeeDetails'
         }
-    }
-]);
-console.log("Aggregation Result for tasksPerEmployee:", JSON.stringify(tasksPerEmployee, null, 2));
+      },
+      { $unwind: '$employeeDetails' },
+      {
+        $project: {
+          _id: 0,
+          employeeId: '$employeeDetails._id', // This is correct
+          employeeName: '$employeeDetails.name',
+          totalTasks: 1
+        }
+      }
+    ]);
+    console.log("Aggregation Result for tasksPerEmployee:", JSON.stringify(tasksPerEmployee, null, 2));
 
     // 3. Overall Progress (Percentage)
     const totalTasks = await Task.countDocuments({ user: managerId });
@@ -42,11 +49,11 @@ console.log("Aggregation Result for tasksPerEmployee:", JSON.stringify(tasksPerE
     const completionPercentage = totalTasks > 0 ? (doneTasks / totalTasks) * 100 : 0;
 
     const responseData = {
-        statusSummary,
-        tasksPerEmployee,
-        completionPercentage: completionPercentage.toFixed(1),
-        totalTasks,
-        doneTasks
+      statusSummary,
+      tasksPerEmployee,
+      completionPercentage: completionPercentage.toFixed(1),
+      totalTasks,
+      doneTasks
     };
 
     console.log("--- [getAnalyticsSummary] Sending successful response ---");
@@ -90,10 +97,10 @@ export const getEmployeeSummary = async (req, res) => {
     const { employeeId } = req.params;
     console.log(`Raw employeeId from params: ${employeeId}`);
 
-    const managerId = new mongoose.Types.ObjectId(req.user.id);
+    const managerId = new mongoose.mongo.ObjectId(req.user.id);
     console.log(`Manager ID: ${managerId}`);
 
-    const employeeObjectId = new mongoose.Types.ObjectId(employeeId);
+    const employeeObjectId = new mongoose.mongo.ObjectId(employeeId);
     console.log(`Converted employeeObjectId: ${employeeObjectId}`);
 
     // This query is very similar to the main summary, but with an
