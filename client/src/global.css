@@ -149,3 +149,35 @@ p {
 .remark-box.acknowledged {
   border-left: 3px solid var(--secondary-color);
 }
+
+.employee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.employee-link {
+  display: block;
+  padding: 12px 15px;
+  background-color: var(--grey-color);
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  color: var(--dark-color);
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  border-left: 4px solid transparent;
+}
+
+.employee-link:hover {
+  background-color: #e9ecef;
+  border-left-color: var(--primary-color);
+  transform: translateX(5px);
+  color: var(--primary-color);
+}
+
+.employee-link span {
+  float: right;
+  color: #777;
+  font-size: 0.9em;
+  font-weight: normal;
+}
