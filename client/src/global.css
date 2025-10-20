@@ -1,10 +1,7 @@
 :root {
   --primary-color: #3498db;
-  /* A nice blue */
   --secondary-color: #2ecc71;
-  /* A nice green */
   --danger-color: #e74c3c;
-  /* A nice red */
   --light-color: #ffffff;
   --dark-color: #2c3e50;
   --grey-color: #f4f7f6;
@@ -14,7 +11,6 @@
   --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Basic Reset and Global Font Styles */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--grey-color);
@@ -23,7 +19,6 @@ body {
   color: var(--dark-color);
 }
 
-/* Global Typography */
 h1,
 h2,
 h3 {
@@ -35,7 +30,6 @@ p {
   line-height: 1.6;
 }
 
-/* Common Button Styles */
 .btn {
   padding: 10px 15px;
   border: none;
@@ -65,7 +59,6 @@ p {
   color: var(--light-color);
 }
 
-/* Common Form Styles */
 .input-field {
   flex-grow: 1;
   padding: 10px;
@@ -74,7 +67,6 @@ p {
   font-size: 16px;
 }
 
-/* Main App Container */
 .app-container {
   max-width: 800px;
   margin: 0 auto;
@@ -180,4 +172,56 @@ p {
   color: #777;
   font-size: 0.9em;
   font-weight: normal;
+}
+
+@media (max-width: 992px) {
+
+  .chart-bar,
+  .chart-pie {
+    grid-column: span 1;
+    max-width: 400px;
+    justify-self: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 15px;
+  }
+
+  .dashboard-grid,
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card p {
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .chart-bar,
+  .chart-pie {
+    max-width: 300px;
+    justify-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn{
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 320px) {
+
+  .chart-bar,
+  .chart-pie {
+    max-width: 200px;
+  }
+
+  .metric-card {
+    max-width: 200px;
+  }
 }

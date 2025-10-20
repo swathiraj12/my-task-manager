@@ -138,9 +138,9 @@ form {
 }
 
 .task-info-link {
-  text-decoration: none;
-  color: inherit;
-  flex-grow: 1;
+    text-decoration: none;
+    color: inherit;
+    flex-grow: 1;
 }
 
 .task-meta {
@@ -177,9 +177,17 @@ form {
 
 /* --- Responsive Styles --- */
 @media (max-width: 768px) {
+
+    .add-task-form .form-grid,
+    .controls-container {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
     .task-item {
         grid-template-columns: 1fr;
         align-items: flex-start;
+        gap: 10px;
     }
 
     .task-tags {
@@ -188,7 +196,11 @@ form {
 
     .task-actions {
         width: 100%;
-        margin-top: 0;
+        margin-top: 5px;
+    }
+
+    .task-actions .btn-danger {
+        margin-left: auto;
     }
 }
 

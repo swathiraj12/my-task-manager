@@ -1,8 +1,5 @@
-/* client/src/pages/TaskDetailsPage.css */
-
 .task-details-page {
     padding: 0;
-    /* Let the grid handle spacing */
 }
 
 .task-details-header {
@@ -48,7 +45,6 @@
     padding-bottom: 10px;
 }
 
-/* Update Form Styles */
 .update-form {
     display: flex;
     flex-direction: column;
@@ -80,7 +76,6 @@
     align-self: flex-end;
 }
 
-/* Details Sidebar Styles */
 .details-list {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -96,7 +91,6 @@
     text-align: right;
 }
 
-/* Timeline/History Styles */
 .update-timeline {
     position: relative;
 }
@@ -124,7 +118,6 @@
 }
 
 .timeline-item::before {
-    /* The connecting line */
     content: '';
     position: absolute;
     left: 5px;
@@ -163,7 +156,6 @@
     border-top: 1px dashed #eee;
 }
 
-/* Remark Box Styles */
 .remark-form {
     display: flex;
     gap: 10px;
@@ -181,12 +173,10 @@
     margin-top: 15px;
     border-radius: var(--border-radius);
     border-left: 4px solid #ffc107;
-    /* Yellow for pending */
 }
 
 .remark-box.acknowledged {
     border-left-color: var(--secondary-color);
-    /* Green for acknowledged */
 }
 
 .acknowledged-text {
@@ -198,5 +188,14 @@
 @media (max-width: 992px) {
     .details-grid {
         grid-template-columns: 1fr;
+    }
+
+    .update-form .form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .range-label {
+        text-align: left;
     }
 }
