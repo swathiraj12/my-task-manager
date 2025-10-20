@@ -88,7 +88,7 @@ function DashboardPage() {
       </div>
 
       {summary && summary.tasksPerEmployee.length > 0 && (
-        <div className="card">
+        <div className="card team-card">
           <h3>Team Members</h3>
           <div className="employee-list">
             {summary.tasksPerEmployee.map(emp => (

@@ -101,6 +101,7 @@ p {
   font-weight: bold;
   margin: 0;
   color: var(--primary-color);
+  text-align: center;
 }
 
 .chart-card h3 {
@@ -193,10 +194,6 @@ p {
   .details-grid {
     grid-template-columns: 1fr;
   }
-
-  .metric-card p {
-    text-align: center;
-  }
 }
 
 @media (max-width: 600px) {
@@ -209,7 +206,7 @@ p {
 }
 
 @media (max-width: 480px) {
-  .btn{
+  .btn {
     font-size: 12px;
   }
 }
